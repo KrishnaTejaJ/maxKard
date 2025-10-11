@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MaxKard</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      width: 400px;
+      min-height: 500px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #ffffff;
+      color: #1a1a1a;
+    }
+
+    .header {
+      background: #2563eb;
+      padding: 20px;
+      text-align: center;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .header h1 {
+      font-size: 20px;
+      font-weight: 600;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .header p {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.9);
+      margin-top: 4px;
+    }
+
+    .tabs {
+      display: flex;
+      background: #f9fafb;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 14px;
+      text-align: center;
+      font-size: 14px;
+      font-weight: 500;
+      color: #6b7280;
+      cursor: pointer;
+      border: none;
+      background: none;
+      transition: all 0.2s;
+      border-bottom: 2px solid transparent;
+    }
+
+    .tab:hover {
+      color: #2563eb;
+      background: #eff6ff;
+    }
+
+    .tab.active {
+      color: #2563eb;
+      border-bottom-color: #2563eb;
+      background: white;
+    }
+
+    .tab-content {
+      display: none;
+      padding: 20px;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    /* Home Tab */
+    .recommendation-card {
+      background: #f0f9ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .rec-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      color: #1e40af;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .rec-merchant {
+      font-size: 15px;
+      margin-bottom: 8px;
+      color: #374151;
+    }
+
+    .rec-best-card {
+      background: white;
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 8px;
+      border: 1px solid #e5e7eb;
+    }
+
+    .rec-card-name {
+      font-weight: 600;
+      color: #1a1a1a;
+      margin-bottom: 4px;
+    }
+
+    .rec-earnings {
+      color: #059669;
+      font-weight: 600;
+      font-size: 18px;
+    }
+
+    .no-recommendation {
+      text-align: center;
+      padding: 40px 20px;
+      color: #6b7280;
+    }
+
+    .no-recommendation-icon {
+      font-size: 48px;
+      margin-bottom: 12px;
+      opacity: 0.5;
+    }
+
+    /* Cards List */
+    .cards-list {
+      margin-bottom: 16px;
+    }
+
+    .card-item {
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 14px;
+      margin-bottom: 10px;
+      transition: all 0.2s;
+    }
+
+    .card-item:hover {
+      border-color: #2563eb;
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.1);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .card-name {
+      font-size: 15px;
+      font-weight: 600;
+      color: #1a1a1a;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-icon {
+      font-size: 18px;
+    }
+
+    .card-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    .btn-icon {
+      background: white;
+      border: 1px solid #e5e7eb;
+      padding: 6px 10px;
+      border-radius: 4px;
+      color: #6b7280;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-icon:hover {
+      background: #f3f4f6;
+      color: #1a1a1a;
+      border-color: #d1d5db;
+    }
+
+    .card-rewards {
+      font-size: 12px;
+      color: #6b7280;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+
+    .reward-item {
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .reward-label {
+      color: #6b7280;
+    }
+
+    .reward-value {
+      font-weight: 600;
+      color: #1a1a1a;
+    }
+
+    .btn-primary {
+      width: 100%;
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .btn-primary:hover {
+      background: #1d4ed8;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: #6b7280;
+    }
+
+    .empty-state-icon {
+      font-size: 48px;
+      margin-bottom: 12px;
+      opacity: 0.5;
+    }
+
+    /* Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      width: 360px;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .modal-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #1a1a1a;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: #9ca3af;
+      padding: 0;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+    }
+
+    .close-btn:hover {
+      background: #f3f4f6;
+      color: #1a1a1a;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: #374151;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 14px;
+      transition: border-color 0.2s;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+
+    .rewards-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    .reward-input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .reward-input-group label {
+      font-size: 12px;
+      color: #6b7280;
+      font-weight: 500;
+    }
+
+    .reward-input-group input {
+      padding: 8px;
+      border: 1px solid #d1d5db;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+
+    .reward-input-group input:focus {
+      outline: none;
+      border-color: #2563eb;
+    }
+
+    .btn-save {
+      width: 100%;
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+
+    .btn-save:hover {
+      background: #1d4ed8;
+    }
+
+    .ai-helper {
+      background: #eff6ff;
+      border: 1px solid #dbeafe;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 16px;
+    }
+
+    .ai-helper-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: #1e40af;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .ai-helper textarea {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #bfdbfe;
+      border-radius: 6px;
+      font-size: 12px;
+      min-height: 60px;
+      resize: vertical;
+    }
+
+    .btn-parse {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+
+    .btn-parse:hover {
+      background: #1d4ed8;
+    }
+
+    .btn-load-samples {
+      width: 100%;
+      background: #f3f4f6;
+      color: #374151;
+      border: 1px solid #d1d5db;
+      padding: 10px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      margin-bottom: 16px;
+      transition: all 0.2s;
+    }
+
+    .btn-load-samples:hover {
+      background: #e5e7eb;
+      border-color: #9ca3af;
+    }
+
+    .btn-refresh {
+      width: 100%;
+      background: white;
+      color: #2563eb;
+      border: 1px solid #2563eb;
+      padding: 10px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 12px;
+      transition: all 0.2s;
+    }
+
+    .btn-refresh:hover {
+      background: #eff6ff;
+    }
+
+    .btn-refresh-icon {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      width: 32px;
+      height: 32px;
+      background: white;
+      color: #6b7280;
+      border: 1px solid #e5e7eb;
+      border-radius: 50%;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+    }
+
+    .btn-refresh-icon:hover {
+      background: #f3f4f6;
+      color: #2563eb;
+      border-color: #2563eb;
+      transform: rotate(90deg);
+    }
+
+    .btn-refresh-icon:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .cashback-badge {
+      display: inline-block;
+      background: #10b981;
+      color: white;
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 16px;
+      font-weight: 700;
+      margin-top: 8px;
+    }
+
+    .tab-content {
+      position: relative;
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>💳 MaxKard</h1>
+    <p>Smart credit card assistant</p>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="home">Home</button>
+    <button class="tab" data-tab="cards">My Cards</button>
+  </div>
+
+  <!-- Home Tab -->
+  <div class="tab-content active" id="home">
+    <div id="homeContent" style="opacity: 0; transition: opacity 0.3s;">
+      <div class="no-recommendation">
+        <div class="no-recommendation-icon">🛒</div>
+        <p><strong>No recommendation yet</strong></p>
+        <p style="font-size: 12px; margin-top: 8px;">Visit a checkout page to see<br>your best card recommendation!</p>
+      </div>
+    </div>
+    
+    <button class="btn-refresh-icon" id="refreshBtn" style="display: none;" title="Refresh recommendation">
+      🔄
+    </button>
+  </div>
+
+  <!-- Cards Tab -->
+  <div class="tab-content" id="cards">
+    <div class="cards-list" id="cardsList">
+      <div class="empty-state">
+        <div class="empty-state-icon">🎴</div>
+        <p>No cards added yet.<br>Add your first card to get started!</p>
+      </div>
+    </div>
+
+    <button class="btn-primary" id="addCardBtn">
+      ➕ Add New Card
+    </button>
+  </div>
+
+  <!-- Add/Edit Card Modal -->
+  <div class="modal" id="cardModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title" id="modalTitle">Add New Card</h2>
+        <button class="close-btn" id="closeModalBtn">&times;</button>
+      </div>
+
+      <div class="ai-helper">
+        <div class="ai-helper-title">
+          <span>✨</span>
+          <span>AI Helper (Optional)</span>
+        </div>
+        <textarea id="aiParseInput" placeholder="Paste your card's rewards terms here (e.g., '3% on dining, 2% on travel, 1% on everything else') and we'll parse it for you!"></textarea>
+        <button class="btn-parse" id="parseBtn">Parse with AI</button>
+      </div>
+
+      <form id="cardForm">
+        <div class="form-group">
+          <label class="form-label" for="cardName">Card Name *</label>
+          <input type="text" id="cardName" class="form-input" placeholder="e.g., Chase Sapphire Preferred" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="lastFour">Last 4 Digits (Optional)</label>
+          <input type="text" id="lastFour" class="form-input" placeholder="1234" maxlength="4">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Rewards Structure *</label>
+          <div class="rewards-grid">
+            <div class="reward-input-group">
+              <label>Dining %</label>
+              <input type="number" id="rewardDining" step="0.1" min="0" placeholder="3.0">
+            </div>
+            <div class="reward-input-group">
+              <label>Gas %</label>
+              <input type="number" id="rewardGas" step="0.1" min="0" placeholder="2.0">
+            </div>
+            <div class="reward-input-group">
+              <label>Groceries %</label>
+              <input type="number" id="rewardGroceries" step="0.1" min="0" placeholder="2.0">
+            </div>
+            <div class="reward-input-group">
+              <label>Travel %</label>
+              <input type="number" id="rewardTravel" step="0.1" min="0" placeholder="2.0">
+            </div>
+            <div class="reward-input-group">
+              <label>Online %</label>
+              <input type="number" id="rewardOnline" step="0.1" min="0" placeholder="1.0">
+            </div>
+            <div class="reward-input-group">
+              <label>Everything Else %</label>
+              <input type="number" id="rewardDefault" step="0.1" min="0" placeholder="1.0" required>
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-save">Save Card</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

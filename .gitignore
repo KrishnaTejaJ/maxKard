@@ -1,0 +1,71 @@
+# MacOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux
+*~
+.directory
+
+# IDE / Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.settings/
+.classpath
+
+# Node (if you add build tools later)
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json
+yarn.lock
+
+# Build artifacts
+dist/
+build/
+*.zip
+*.crx
+*.pem
+
+# Logs
+logs/
+*.log
+
+# Temp files
+tmp/
+temp/
+.cache/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Testing
+coverage/
+.nyc_output/
+
+# Chrome Extension specific
+*.pem
+key.pem
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# Private notes (if you keep development notes)
+NOTES.md
+TODO-private.md
+
+media/
