@@ -20,7 +20,12 @@
         "https://*/*",
         "http://*/*"
       ],
-      "js": ["content/checkout-widget.js"],
+      "js": [
+        "content/dom-utils.js",
+        "content/prompt-preprocessor.js", 
+        "content/prompt-analyzer.js",
+        "content/checkout-widget.js"
+      ],
       "run_at": "document_idle"
     }
   ],

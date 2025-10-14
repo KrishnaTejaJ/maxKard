@@ -1,5 +1,6 @@
 - Correct cost extraction, if not possible then clean in up
 - Have a dataset for domains and their categories rather than reading directly as a dictionary in checkout-widget.js
+- Effects of clearing cache, whats more permanent storage method on browser?
 - Have a dataset for cards and their benefits
     - A scraping script for online card info websites to create the dataset, need to solve the problem of regularity (how often are we scraping to reflect the latest changes)
     - Look for any exisiting ones
