@@ -1,2 +1,0 @@
-- [GENERAL] Parsing user emails from the credit card companies to provide accurate upto date rewards
-- [APP] For location based merchant detection in a mall/supermarket, if can provide all the nearby places sorted by the distance and probability so that even the auto detection doesnt happen, the user can pick from the list
