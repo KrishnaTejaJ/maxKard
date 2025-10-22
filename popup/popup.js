@@ -1,59 +1,230 @@
-// popup.js - Card Manager Logic
-
+// Global state
 let cards = [];
 let editingCardId = null;
 let currentRecommendation = null;
 
-// Initialize
+// Initialize on DOM load
 document.addEventListener('DOMContentLoaded', async () => {
+  await initializeTheme();
   await loadCards();
   await loadCurrentRecommendation();
   renderCards();
-  await renderHome();
+  renderHome();
   setupEventListeners();
-  setupTabs();
-  
-  // Fade in home content after render
-  setTimeout(() => {
-    const homeContent = document.getElementById('homeContent');
-    if (homeContent) {
-      homeContent.style.opacity = '1';
-    }
-  }, 100);
 });
 
-// Load cards from storage
+// Theme Management
+function initializeTheme() {
+  const stored = localStorage.getItem('theme');
+  const theme = stored || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  setTheme(theme);
+  
+  // Listen to system theme changes
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+    if (!localStorage.getItem('theme')) {
+      setTheme(e.matches ? 'dark' : 'light');
+    }
+  });
+}
+
+function setTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('theme', theme);
+  document.getElementById('themeIcon').textContent = theme === 'dark' ? '☀️' : '🌙';
+  document.getElementById('darkModeToggle').checked = theme === 'dark';
+}
+
+// Data Loading
 async function loadCards() {
   const result = await chrome.storage.local.get(['cards']);
   cards = result.cards || [];
 }
 
-// Load current recommendation from storage
 async function loadCurrentRecommendation() {
   const result = await chrome.storage.local.get(['currentRecommendation']);
   currentRecommendation = result.currentRecommendation || null;
 }
 
-// Save cards to storage
 async function saveCards() {
   await chrome.storage.local.set({ cards });
 }
 
-// Setup tabs
-function setupTabs() {
-  const tabButtons = document.querySelectorAll('.tab');
-  const tabContents = document.querySelectorAll('.tab-content');
+// Render Functions
+function renderHome() {
+  const homeContent = document.getElementById('homeContent');
   
-  tabButtons.forEach(button => {
-    button.addEventListener('click', () => {
-      const tabName = button.dataset.tab;
+  if (!currentRecommendation) {
+    homeContent.innerHTML = `
+      <div class="no-recommendation">
+        <div class="no-rec-icon">🛒</div>
+        <div class="no-rec-title">No recommendation yet</div>
+        <div class="no-rec-text">Visit a checkout page to see your best card recommendation!</div>
+      </div>
+    `;
+    return;
+  }
+  
+  const { merchant, category, bestCard, maxReward, hasAmount } = currentRecommendation;
+  const networkClass = getNetworkClass(bestCard.network);
+  
+  // Format earnings display
+  const earningsDisplay = hasAmount 
+    ? `$${maxReward.toFixed(2)}` 
+    : '<span style="color: var(--text-tertiary); font-style: italic; font-size: 14px;">Amount not available</span>';
+  
+  homeContent.innerHTML = `
+    <div class="recommendation-card">
+      <div class="rec-content">
+        <div class="rec-label">Recommended for you</div>
+        <div class="rec-merchant">${merchant.name}</div>
+        <div class="rec-category">${formatCategory(category)}</div>
+        
+        <div class="best-card-container">
+          <div class="card-image ${networkClass}"></div>
+          <div class="best-card-info">
+            <div class="best-card-name">${bestCard.name}</div>
+            <div class="best-card-rate">${bestCard.rate}% cashback on ${category}</div>
+            <div class="best-card-earnings">${earningsDisplay}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="info-banner">
+      MaxKard automatically detects checkout pages and recommends your best card based on the merchant category.
+    </div>
+  `;
+}
+
+function renderCards() {
+  const cardsList = document.getElementById('cardsList');
+  const cardCount = document.getElementById('cardCount');
+  
+  cardCount.textContent = `${cards.length} card${cards.length !== 1 ? 's' : ''}`;
+  
+  if (cards.length === 0) {
+    cardsList.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">💳</div>
+        <div class="empty-title">No cards yet</div>
+        <div class="empty-text">Add your first credit card to start maximizing your rewards!</div>
+      </div>
+    `;
+    return;
+  }
+  
+  cardsList.innerHTML = cards.map(card => {
+    const networkClass = getNetworkClass(card.network);
+    return `
+      <div class="card-item" data-card-id="${card.id}">
+        <div class="card-item-header">
+          <div class="card-item-image ${networkClass}"></div>
+          <div class="card-item-info">
+            <div class="card-item-name">
+              ${card.name}
+              ${card.lastFour ? `<span class="card-last-four">${card.lastFour}</span>` : ''}
+            </div>
+            <div class="card-item-type">${formatNetwork(card.network)}</div>
+          </div>
+        </div>
+        <div class="card-rewards">
+          ${formatRewards(card.rewards)}
+        </div>
+      </div>
+    `;
+  }).join('');
+  
+  // Add click handlers for edit
+  document.querySelectorAll('.card-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const cardId = item.dataset.cardId;
+      editCard(cardId);
+    });
+  });
+}
+
+// Helper Functions
+function getNetworkClass(network) {
+  const networkMap = {
+    'visa': '',
+    'mastercard': 'mastercard',
+    'amex': 'amex',
+    'discover': 'discover'
+  };
+  return networkMap[network] || '';
+}
+
+function formatNetwork(network) {
+  const networkNames = {
+    'visa': 'Visa',
+    'mastercard': 'Mastercard',
+    'amex': 'American Express',
+    'discover': 'Discover'
+  };
+  return networkNames[network] || 'Visa';
+}
+
+function formatCategory(category) {
+  const categoryNames = {
+    'dining': 'Dining & Restaurants',
+    'gas': 'Gas Stations',
+    'groceries': 'Grocery Stores',
+    'travel': 'Travel & Transportation',
+    'online': 'Online Shopping',
+    'default': 'General Purchases'
+  };
+  return categoryNames[category] || 'General Purchases';
+}
+
+function formatRewards(rewards) {
+  const rewardItems = [];
+  const icons = {
+    dining: '🍽️',
+    gas: '⛽',
+    groceries: '🛒',
+    travel: '✈️',
+    online: '🌐',
+    default: '💰'
+  };
+  
+  const labels = {
+    dining: 'Dining',
+    gas: 'Gas',
+    groceries: 'Groceries',
+    travel: 'Travel',
+    online: 'Online',
+    default: 'Default'
+  };
+  
+  for (const [category, rate] of Object.entries(rewards)) {
+    if (rate && rate > 0) {
+      rewardItems.push(`
+        <div class="reward-badge">
+          <span class="reward-icon">${icons[category]}</span>
+          <span>${labels[category]}</span>
+          <span class="reward-value">${rate}%</span>
+        </div>
+      `);
+    }
+  }
+  
+  return rewardItems.join('');
+}
+
+function generateId() {
+  return 'card_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+}
+
+// Event Listeners
+function setupEventListeners() {
+  // Tab switching
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      const tabName = tab.dataset.tab;
       
-      // Update active tab button
-      tabButtons.forEach(btn => btn.classList.remove('active'));
-      button.classList.add('active');
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
       
-      // Update active tab content
-      tabContents.forEach(content => {
+      document.querySelectorAll('.tab-content').forEach(content => {
         content.classList.remove('active');
         if (content.id === tabName) {
           content.classList.add('active');
@@ -61,149 +232,38 @@ function setupTabs() {
       });
     });
   });
-}
-
-// Render home tab
-async function renderHome() {
-  const homeContent = document.getElementById('homeContent');
-  const refreshBtn = document.getElementById('refreshBtn');
   
-  if (!currentRecommendation) {
-    homeContent.innerHTML = `
-      <div class="no-recommendation">
-        <div class="no-recommendation-icon">🛒</div>
-        <p><strong>No recommendation yet</strong></p>
-        <p style="font-size: 12px; margin-top: 8px;">Visit a checkout page to see<br>your best card recommendation!</p>
-      </div>
-    `;
-    refreshBtn.style.display = 'none';
-    return;
-  }
-  
-  const { merchant, category, bestCard, maxReward, hasAmount, amount } = currentRecommendation;
-  
-  // Format earnings display
-  let earningsDisplay;
-  if (hasAmount && amount !== null) {
-    earningsDisplay = `$${maxReward.toFixed(2)}`;
-  } else {
-    earningsDisplay = '<span style="color: #666; font-style: italic; font-size: 12px;">Amount not found</span>';
-  }
-  
-  homeContent.innerHTML = `
-    <div class="recommendation-card">
-      <div class="rec-header">
-        <span>💡</span>
-        <span>Best Card Recommendation</span>
-      </div>
-      <div class="rec-merchant">
-        ${getCategoryEmoji(category)} <strong>${merchant.name}</strong> • ${category}
-      </div>
-      <div class="rec-best-card">
-        <div class="rec-card-name">${bestCard.name}</div>
-        <div style="font-size: 13px; color: #6b7280; margin-bottom: 8px;">
-          ${bestCard.rate}% cashback
-        </div>
-        <div class="rec-earnings">You'll earn: ${earningsDisplay}</div>
-      </div>
-    </div>
-    <p style="font-size: 12px; color: #6b7280; text-align: center; margin-top: 8px;">
-      Recommendation updates on checkout pages
-    </p>
-  `;
-  
-  refreshBtn.style.display = 'block';
-}
-
-// Get emoji for category
-function getCategoryEmoji(category) {
-  const emojis = {
-    dining: '🍽️',
-    gas: '⛽',
-    groceries: '🛒',
-    travel: '✈️',
-    online: '🌐'
-  };
-  return emojis[category] || '💰';
-}
-
-// Render cards list
-function renderCards() {
-  const cardsList = document.getElementById('cardsList');
-  
-  if (cards.length === 0) {
-    cardsList.innerHTML = `
-      <div class="empty-state">
-        <div class="empty-state-icon">🎴</div>
-        <p>No cards added yet.<br>Add your first card to get started!</p>
-      </div>
-    `;
-    return;
-  }
-
-  cardsList.innerHTML = cards.map(card => `
-    <div class="card-item" data-card-id="${card.id}">
-      <div class="card-header">
-        <div class="card-name">
-          <span class="card-icon">💳</span>
-          <span>${card.name}</span>
-          ${card.lastFour ? `<span style="opacity: 0.5; font-size: 12px;">••${card.lastFour}</span>` : ''}
-        </div>
-        <div class="card-actions">
-          <button class="btn-icon edit-card-btn" data-id="${card.id}">Edit</button>
-          <button class="btn-icon delete-card-btn" data-id="${card.id}">Delete</button>
-        </div>
-      </div>
-      <div class="card-rewards">
-        ${formatRewards(card.rewards)}
-      </div>
-    </div>
-  `).join('');
-  
-  // Add event listeners to edit/delete buttons
-  document.querySelectorAll('.edit-card-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      editCard(btn.dataset.id);
-    });
+  // Theme toggles
+  document.getElementById('themeToggle').addEventListener('click', () => {
+    const current = document.documentElement.getAttribute('data-theme') || 'light';
+    setTheme(current === 'dark' ? 'light' : 'dark');
   });
   
-  document.querySelectorAll('.delete-card-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      deleteCard(btn.dataset.id);
-    });
+  document.getElementById('darkModeToggle').addEventListener('change', (e) => {
+    setTheme(e.target.checked ? 'dark' : 'light');
   });
-}
-
-// Format rewards for display
-function formatRewards(rewards) {
-  const rewardItems = [];
   
-  if (rewards.dining) rewardItems.push(`<div class="reward-item"><span class="reward-label">🍽️ Dining:</span><span class="reward-value">${rewards.dining}%</span></div>`);
-  if (rewards.gas) rewardItems.push(`<div class="reward-item"><span class="reward-label">⛽ Gas:</span><span class="reward-value">${rewards.gas}%</span></div>`);
-  if (rewards.groceries) rewardItems.push(`<div class="reward-item"><span class="reward-label">🛒 Groceries:</span><span class="reward-value">${rewards.groceries}%</span></div>`);
-  if (rewards.travel) rewardItems.push(`<div class="reward-item"><span class="reward-label">✈️ Travel:</span><span class="reward-value">${rewards.travel}%</span></div>`);
-  if (rewards.online) rewardItems.push(`<div class="reward-item"><span class="reward-label">🌐 Online:</span><span class="reward-value">${rewards.online}%</span></div>`);
-  if (rewards.default) rewardItems.push(`<div class="reward-item"><span class="reward-label">💰 Default:</span><span class="reward-value">${rewards.default}%</span></div>`);
+  // Settings toggles
+  document.getElementById('alertsToggle').addEventListener('change', async (e) => {
+    await chrome.storage.local.set({ alertsEnabled: e.target.checked });
+  });
   
-  return rewardItems.join('');
-}
-
-// Setup event listeners
-function setupEventListeners() {
+  document.getElementById('autoDetectToggle').addEventListener('change', async (e) => {
+    await chrome.storage.local.set({ autoDetectEnabled: e.target.checked });
+  });
+  
+  // Modal controls
   document.getElementById('addCardBtn').addEventListener('click', openAddModal);
   document.getElementById('closeModalBtn').addEventListener('click', closeModal);
-  document.getElementById('cardForm').addEventListener('submit', handleSubmit);
-  document.getElementById('parseBtn').addEventListener('click', parseRewardsWithAI);
-  document.getElementById('refreshBtn').addEventListener('click', refreshRecommendation);
-  
-  // Close modal on outside click
   document.getElementById('cardModal').addEventListener('click', (e) => {
     if (e.target.id === 'cardModal') closeModal();
   });
   
-  // Listen for recommendation updates
+  // Form submission
+  document.getElementById('cardForm').addEventListener('submit', handleSubmit);
+  document.getElementById('parseBtn').addEventListener('click', parseRewardsWithAI);
+  
+  // Listen for storage changes
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area === 'local') {
       if (changes.cards) {
@@ -218,103 +278,7 @@ function setupEventListeners() {
   });
 }
 
-// Refresh recommendation manually
-async function refreshRecommendation() {
-  const refreshBtn = document.getElementById('refreshBtn');
-  
-  refreshBtn.disabled = true;
-  refreshBtn.style.animation = 'spin 1s linear infinite';
-  
-  try {
-    // Query active tab
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    
-    if (!tab || !tab.id) {
-      alert('Could not access current tab');
-      refreshBtn.style.animation = '';
-      refreshBtn.disabled = false;
-      return;
-    }
-    
-    // Try to send message to content script
-    try {
-      await chrome.tabs.sendMessage(tab.id, { action: 'recalculate' });
-      
-      // Wait a bit for recalculation
-      setTimeout(async () => {
-        await loadCurrentRecommendation();
-        await renderHome();
-        
-        refreshBtn.style.animation = '';
-        refreshBtn.disabled = false;
-      }, 800);
-    } catch (messageError) {
-      // Content script not loaded on this page - recalculate locally
-      await recalculateRecommendation();
-      
-      refreshBtn.style.animation = '';
-      refreshBtn.disabled = false;
-    }
-    
-  } catch (error) {
-    refreshBtn.style.animation = '';
-    refreshBtn.disabled = false;
-  }
-}
-
-// Recalculate recommendation locally (when cards change)
-async function recalculateRecommendation() {
-  if (!currentRecommendation) return;
-  
-  const { merchant, category, amount, hasAmount } = currentRecommendation;
-  
-  // Recalculate with current cards
-  let bestCard = null;
-  let maxReward = 0;
-  
-  // Don't use fallback amount - respect the original hasAmount flag
-  const calculationAmount = hasAmount ? amount : null;
-  
-  for (const card of cards) {
-    const rate = card.rewards[category] || card.rewards.default || 0;
-    
-    // Only calculate monetary reward if we have an amount
-    if (calculationAmount !== null) {
-      const reward = calculationAmount * (rate / 100);
-      
-      if (reward > maxReward) {
-        maxReward = reward;
-        bestCard = { ...card, rate };
-      }
-    } else {
-      // If no amount, just find the best rate
-      if (rate > maxReward) {
-        maxReward = rate;
-        bestCard = { ...card, rate };
-      }
-    }
-  }
-  
-  if (bestCard) {
-    // Update recommendation in storage
-    await chrome.storage.local.set({
-      currentRecommendation: {
-        merchant,
-        category,
-        bestCard,
-        maxReward,
-        amount,
-        hasAmount, // Preserve the original hasAmount flag
-        timestamp: Date.now()
-      }
-    });
-    
-    currentRecommendation = await (await chrome.storage.local.get(['currentRecommendation'])).currentRecommendation;
-    await renderHome();
-  }
-}
-
-// Open add modal
+// Modal Functions
 function openAddModal() {
   editingCardId = null;
   document.getElementById('modalTitle').textContent = 'Add New Card';
@@ -322,7 +286,6 @@ function openAddModal() {
   document.getElementById('cardModal').classList.add('active');
 }
 
-// Edit card
 function editCard(cardId) {
   const card = cards.find(c => c.id === cardId);
   if (!card) return;
@@ -331,6 +294,7 @@ function editCard(cardId) {
   document.getElementById('modalTitle').textContent = 'Edit Card';
   
   document.getElementById('cardName').value = card.name;
+  document.getElementById('cardNetwork').value = card.network || 'visa';
   document.getElementById('lastFour').value = card.lastFour || '';
   document.getElementById('rewardDining').value = card.rewards.dining || '';
   document.getElementById('rewardGas').value = card.rewards.gas || '';
@@ -342,29 +306,19 @@ function editCard(cardId) {
   document.getElementById('cardModal').classList.add('active');
 }
 
-// Delete card
-async function deleteCard(cardId) {
-  if (!confirm('Are you sure you want to delete this card?')) return;
-  
-  cards = cards.filter(c => c.id !== cardId);
-  await saveCards();
-  renderCards();
-}
-
-// Close modal
 function closeModal() {
   document.getElementById('cardModal').classList.remove('active');
   document.getElementById('cardForm').reset();
   editingCardId = null;
 }
 
-// Handle form submit
 async function handleSubmit(e) {
   e.preventDefault();
   
   const cardData = {
     id: editingCardId || generateId(),
     name: document.getElementById('cardName').value.trim(),
+    network: document.getElementById('cardNetwork').value,
     lastFour: document.getElementById('lastFour').value.trim(),
     rewards: {
       dining: parseFloat(document.getElementById('rewardDining').value) || 0,
@@ -377,11 +331,9 @@ async function handleSubmit(e) {
   };
   
   if (editingCardId) {
-    // Update existing card
     const index = cards.findIndex(c => c.id === editingCardId);
     cards[index] = cardData;
   } else {
-    // Add new card
     cards.push(cardData);
   }
   
@@ -389,13 +341,13 @@ async function handleSubmit(e) {
   renderCards();
   closeModal();
   
-  // Auto-refresh recommendation if we have one
+  // Recalculate recommendation if we have one
   if (currentRecommendation) {
     await recalculateRecommendation();
   }
 }
 
-// Parse rewards with AI
+// AI Parsing
 async function parseRewardsWithAI() {
   const input = document.getElementById('aiParseInput').value.trim();
   if (!input) {
@@ -409,50 +361,42 @@ async function parseRewardsWithAI() {
   
   try {
     let parsed = {};
-    let aiAvailable = false;
     
+    // Try AI first
     try {
-      const availability = await LanguageModel.availability({ language: 'en' });
+      const availability = await window.ai?.languageModel?.capabilities();
       
-      if (availability === 'available' || availability === 'readily') {
-        aiAvailable = true;
-        
-        const session = await LanguageModel.create({
-          systemPrompt: 'You are a credit card rewards parser. Extract percentages and format them exactly as requested.'
+      if (availability?.available === 'readily') {
+        const session = await window.ai.languageModel.create({
+          systemPrompt: 'Extract credit card rewards percentages. Reply ONLY in format: dining:X, gas:X, groceries:X, travel:X, online:X, default:X'
         });
         
-        const prompt = `Extract credit card rewards percentages. Reply ONLY in format: dining:X, gas:X, groceries:X, travel:X, online:X, default:X
-
-Text: ${input}`;
-        
-        const response = await session.prompt(prompt);
+        const response = await session.prompt(`Extract rewards from: ${input}`);
         parsed = parseRewardsText(response);
+        session.destroy();
         
         if (Object.keys(parsed).length > 0) {
           fillFormWithParsedData(parsed);
-          alert('✅ Rewards parsed with AI! Please review and adjust if needed.');
+          alert('✅ Rewards parsed successfully!');
           return;
         }
       }
     } catch (aiError) {
-      // AI not available, fallback to regex
+      console.log('AI not available, using fallback');
     }
     
-    // Fallback: regex parsing
-    const fallback = parseRewardsTextSimple(input);
+    // Fallback to regex
+    parsed = parseRewardsTextSimple(input);
     
-    if (Object.keys(fallback).length > 0) {
-      fillFormWithParsedData(fallback);
-      let message = '✅ Rewards parsed! Please review and adjust if needed.';
-      if (!aiAvailable) {
-        message += '\n\nℹ️ AI not available. Using pattern matching.';
-      }
-      alert(message);
+    if (Object.keys(parsed).length > 0) {
+      fillFormWithParsedData(parsed);
+      alert('✅ Rewards parsed! Please review and adjust if needed.');
     } else {
       alert('⚠️ Could not parse rewards. Please enter manually.');
     }
     
   } catch (error) {
+    console.error('Parse error:', error);
     alert('⚠️ Error parsing rewards. Please enter manually.');
   } finally {
     parseBtn.textContent = 'Parse with AI';
@@ -460,17 +404,6 @@ Text: ${input}`;
   }
 }
 
-// Helper function to fill form
-function fillFormWithParsedData(parsed) {
-  if (parsed.dining) document.getElementById('rewardDining').value = parsed.dining;
-  if (parsed.gas) document.getElementById('rewardGas').value = parsed.gas;
-  if (parsed.groceries) document.getElementById('rewardGroceries').value = parsed.groceries;
-  if (parsed.travel) document.getElementById('rewardTravel').value = parsed.travel;
-  if (parsed.online) document.getElementById('rewardOnline').value = parsed.online;
-  if (parsed.default) document.getElementById('rewardDefault').value = parsed.default;
-}
-
-// Parse rewards text from AI response
 function parseRewardsText(text) {
   const rewards = {};
   const patterns = {
@@ -492,35 +425,15 @@ function parseRewardsText(text) {
   return rewards;
 }
 
-// Simple fallback parsing without AI
 function parseRewardsTextSimple(text) {
   const rewards = {};
-  
   const patterns = [
-    { 
-      category: 'dining', 
-      regex: /(\d+\.?\d*)\s*%?\s*(?:back\s*)?(?:on|at|for)?\s*(?:dining|restaurants?|food|takeout|delivery)/i 
-    },
-    { 
-      category: 'gas', 
-      regex: /(\d+\.?\d*)\s*%?\s*(?:back\s*)?(?:on|at|for)?\s*(?:gas|fuel|gas stations?)/i 
-    },
-    { 
-      category: 'groceries', 
-      regex: /(\d+\.?\d*)\s*%?\s*(?:back\s*)?(?:on|at|for)?\s*(?:groceries|grocery|supermarkets?)/i 
-    },
-    { 
-      category: 'travel', 
-      regex: /(\d+\.?\d*)\s*%?\s*(?:back\s*)?(?:on|at|for)?\s*(?:travel|airfare|hotels?|car rentals?|cruises?|flights?)/i 
-    },
-    { 
-      category: 'online', 
-      regex: /(\d+\.?\d*)\s*%?\s*(?:back\s*)?(?:on|at|for)?\s*(?:online|internet|e-commerce)/i 
-    },
-    { 
-      category: 'default', 
-      regex: /(\d+\.?\d*)\s*%?\s*(?:back\s*)?(?:on|at|for)?\s*(?:everything else|all other|all purchases|everywhere|all)/i 
-    }
+    { category: 'dining', regex: /(\d+\.?\d*)\s*%?\s*(?:back\s*)?(?:on|at|for)?\s*(?:dining|restaurants?|food)/i },
+    { category: 'gas', regex: /(\d+\.?\d*)\s*%?\s*(?:back\s*)?(?:on|at|for)?\s*(?:gas|fuel)/i },
+    { category: 'groceries', regex: /(\d+\.?\d*)\s*%?\s*(?:back\s*)?(?:on|at|for)?\s*(?:groceries|grocery)/i },
+    { category: 'travel', regex: /(\d+\.?\d*)\s*%?\s*(?:back\s*)?(?:on|at|for)?\s*(?:travel|airfare|hotels?)/i },
+    { category: 'online', regex: /(\d+\.?\d*)\s*%?\s*(?:back\s*)?(?:on|at|for)?\s*(?:online|internet)/i },
+    { category: 'default', regex: /(\d+\.?\d*)\s*%?\s*(?:back\s*)?(?:on|at|for)?\s*(?:everything|all)/i }
   ];
   
   for (const { category, regex } of patterns) {
@@ -528,9 +441,7 @@ function parseRewardsTextSimple(text) {
     if (match) {
       const value = parseFloat(match[1]);
       if (!isNaN(value) && value >= 0) {
-        if (!rewards[category] || value > rewards[category]) {
-          rewards[category] = value;
-        }
+        rewards[category] = value;
       }
     }
   }
@@ -538,7 +449,52 @@ function parseRewardsTextSimple(text) {
   return rewards;
 }
 
-// Generate unique ID
-function generateId() {
-  return 'card_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+function fillFormWithParsedData(parsed) {
+  if (parsed.dining) document.getElementById('rewardDining').value = parsed.dining;
+  if (parsed.gas) document.getElementById('rewardGas').value = parsed.gas;
+  if (parsed.groceries) document.getElementById('rewardGroceries').value = parsed.groceries;
+  if (parsed.travel) document.getElementById('rewardTravel').value = parsed.travel;
+  if (parsed.online) document.getElementById('rewardOnline').value = parsed.online;
+  if (parsed.default) document.getElementById('rewardDefault').value = parsed.default;
+}
+
+// Recalculate recommendation when cards change
+async function recalculateRecommendation() {
+  if (!currentRecommendation) return;
+  
+  const { merchant, category, amount, hasAmount } = currentRecommendation;
+  
+  let bestCard = null;
+  let maxReward = 0;
+  
+  for (const card of cards) {
+    const rate = card.rewards[category] || card.rewards.default || 0;
+    
+    if (hasAmount && amount !== null) {
+      const reward = amount * (rate / 100);
+      if (reward > maxReward) {
+        maxReward = reward;
+        bestCard = { ...card, rate };
+      }
+    } else {
+      if (rate > maxReward) {
+        maxReward = rate;
+        bestCard = { ...card, rate };
+      }
+    }
+  }
+  
+  if (bestCard) {
+    await chrome.storage.local.set({
+      currentRecommendation: {
+        merchant,
+        category,
+        bestCard,
+        maxReward,
+        amount,
+        hasAmount,
+        timestamp: Date.now()
+      }
+    });
+  }
 }
