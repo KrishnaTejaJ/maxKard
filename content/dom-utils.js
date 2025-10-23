@@ -17,7 +17,7 @@ class DOMUtils {
 
   // Find potential price containers
   findPriceContainers() {
-    console.log('🔍 Finding price containers...');
+    // console.log('🔍 Finding price containers...');
     
     const containers = [];
     const elements = document.querySelectorAll('div, span, p, section, article, td, th');
@@ -40,7 +40,7 @@ class DOMUtils {
       }
     }
     
-    console.log(`📦 Found ${containers.length} potential price containers`);
+    // console.log(`📦 Found ${containers.length} potential price containers`);
     return containers;
   }
 
@@ -128,7 +128,7 @@ class DOMUtils {
       try {
         return document.querySelector(selectorInfo.selector);
       } catch (e) {
-        console.warn('Invalid cached selector:', selectorInfo.selector);
+        // console.warn('Invalid cached selector:', selectorInfo.selector);
       }
     }
     

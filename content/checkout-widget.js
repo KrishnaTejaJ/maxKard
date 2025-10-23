@@ -37,15 +37,15 @@ async function loadCards() {
 // Enhanced price extraction with caching and AI
 async function getCartTotal() {
   const domain = window.location.hostname;
-  console.log('🏪 Starting price extraction for', domain);
+  // console.log('🏪 Starting price extraction for', domain);
   
   // Step 1: Try cached selectors
   const cachedSelectors = await getCachedSelectors(domain);
   if (cachedSelectors) {
-    console.log('💾 Trying cached selectors...');
+    // console.log('💾 Trying cached selectors...');
     const amount = domUtils.tryKnownSelectors(cachedSelectors);
     if (amount !== null) {
-      console.log('✅ Used cached selectors:', amount);
+      // console.log('✅ Used cached selectors:', amount);
       return amount;
     }
   }
@@ -53,7 +53,7 @@ async function getCartTotal() {
   // Step 2: Find price containers
   const containers = domUtils.findPriceContainers();
   if (containers.length === 0) {
-    console.log('❌ No price containers found');
+    // console.log('❌ No price containers found');
     return null;
   }
   
@@ -66,7 +66,7 @@ async function getCartTotal() {
     return result.amount;
   }
   
-  console.log('❌ Could not extract price');
+  // console.log('❌ Could not extract price');
   return null;
 }
 
@@ -81,7 +81,7 @@ async function cacheSuccessfulSelectors(domain, selectors) {
   };
   
   await chrome.storage.local.set({ [cacheKey]: cacheData });
-  console.log('💾 Cached selectors for', domain);
+  // console.log('💾 Cached selectors for', domain);
 }
 
 async function getCachedSelectors(domain) {
@@ -211,7 +211,7 @@ async function calculateAndSaveRecommendation() {
   const { bestCard, maxReward, hasAmount } = calculateBestCard(merchant.category, amount);
   
   if (!bestCard) {
-    console.log('❌ No suitable card found');
+    // console.log('❌ No suitable card found');
     return;
   }
   
@@ -250,9 +250,9 @@ async function calculateAndSaveRecommendation() {
         formattedReward: recommendation.formattedReward
       }
     });
-    console.log('✅ Sent notification to extension');
+    // console.log('✅ Sent notification to extension');
   } catch (e) {
-    console.log('Could not send notification:', e.message);
+    // console.log('Could not send notification:', e.message);
   }
 }
 
@@ -266,7 +266,7 @@ async function cleanupOldRecommendations() {
     const maxAge = 60 * 60 * 1000;
     if (Date.now() - recommendation.timestamp > maxAge) {
       await chrome.storage.local.remove(['currentRecommendation']);
-      console.log('🧹 Cleaned up old recommendation');
+      // console.log('🧹 Cleaned up old recommendation');
     }
   }
 }
@@ -293,7 +293,7 @@ function extractPriceManually() {
     for (const element of elements) {
       const amount = domUtils.extractPriceFromElement(element);
       if (amount !== null && amount > 0) {
-        console.log(`💡 Manual extraction found: $${amount} using ${selector}`);
+        // console.log(`💡 Manual extraction found: $${amount} using ${selector}`);
         return amount;
       }
     }
@@ -306,7 +306,7 @@ function extractPriceManually() {
 chrome.storage.onChanged.addListener(async (changes, area) => {
   if (area === 'local' && changes.cards) {
     cards = changes.cards.newValue || [];
-    console.log(`🔄 Cards updated: ${cards.length} cards loaded`);
+    // console.log(`🔄 Cards updated: ${cards.length} cards loaded`);
     
     if (!recommendationShown && cards.length > 0 && domUtils.isCheckoutPage()) {
       setTimeout(async () => {
@@ -318,20 +318,49 @@ chrome.storage.onChanged.addListener(async (changes, area) => {
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'recalculate') {
-    console.log('🔄 Recalculation requested');
+    console.log('🔄 Recalculation requested from popup');
+    
+    // Reset recommendation status
     recommendationShown = false;
     
     if (domUtils.isCheckoutPage()) {
-      calculateAndSaveRecommendation().then(() => {
+      // Clear any existing recommendation first
+      chrome.storage.local.remove(['currentRecommendation']).then(() => {
+        // Recalculate after a brief delay
+        return calculateAndSaveRecommendation();
+      }).then(() => {
+        console.log('✅ Recalculation completed successfully');
         sendResponse({ success: true });
       }).catch((error) => {
-        console.error('Recalculation failed:', error);
+        console.error('❌ Recalculation failed:', error);
         sendResponse({ success: false, error: error.message });
       });
     } else {
-      sendResponse({ success: false, error: 'Not on checkout page' });
+      sendResponse({ 
+        success: false, 
+        error: 'Not on a checkout page. Please navigate to a checkout page and try again.' 
+      });
     }
-    return true; // Indicates we will send a response asynchronously
+    return true; // Keep message channel open for async response
+  }
+
+  if (request.action === 'analyzeCurrentPage') {
+    console.log('🔍 Page analysis requested from popup');
+    
+    if (domUtils.isCheckoutPage()) {
+      recommendationShown = false;
+      calculateAndSaveRecommendation().then(() => {
+        sendResponse({ success: true });
+      }).catch((error) => {
+        sendResponse({ success: false, error: error.message });
+      });
+    } else {
+      sendResponse({ 
+        success: false, 
+        error: 'Current page is not detected as a checkout page' 
+      });
+    }
+    return true;
   }
   
   if (request.action === 'getPageInfo') {
@@ -365,7 +394,7 @@ let currentUrl = window.location.href;
 setInterval(() => {
   if (window.location.href !== currentUrl) {
     currentUrl = window.location.href;
-    console.log('🔄 Page changed, resetting recommendation status');
+    // console.log('🔄 Page changed, resetting recommendation status');
     recommendationShown = false;
     
     if (domUtils.isCheckoutPage()) {
@@ -382,9 +411,9 @@ setInterval(() => {
 // Cleanup on page load
 cleanupOldRecommendations();
 
-// Debug info
+// Debug info - Keep these critical startup logs
 console.log('💳 MaxKard checkout widget loaded');
-console.log(`📍 Domain: ${window.location.hostname}`);
-console.log(`🛒 Is checkout page: ${domUtils.isCheckoutPage()}`);
+// console.log(`📍 Domain: ${window.location.hostname}`);
+// console.log(`🛒 Is checkout page: ${domUtils.isCheckoutPage()}`);
 
 } // End of if (!window.maxKardLoaded)

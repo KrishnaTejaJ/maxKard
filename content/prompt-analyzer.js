@@ -16,23 +16,23 @@ class PromptAnalyzer {
       const { simplified, originalMap } = this.preprocessor.preprocessContainers(containers);
       
       // 📥 DOWNLOAD SIMPLIFIED AND ORIGINAL MAP AS JSON FILES
-      this.downloadJSON(simplified, 'simplified-containers.json');
-      this.downloadJSON(Array.from(originalMap.entries()), 'original-map.json');
+      // this.downloadJSON(simplified, 'simplified-containers.json');
+      // this.downloadJSON(Array.from(originalMap.entries()), 'original-map.json');
       // this.downloadJSON(containers, 'raw-containers.json');
 
       if (simplified.length === 0) {
-        console.log('No containers after preprocessing');
+        // console.log('No containers after preprocessing');
         return null;
       }
 
       // Try to analyze all at once if it fits
       if (this.preprocessor.fitsInLimit(simplified)) {
-        console.log('📦 Analyzing all containers in single request');
+        // console.log('📦 Analyzing all containers in single request');
         return await this.analyzeSingleWindow(simplified, originalMap);
       }
 
       // Use windowing approach
-      console.log('🪟 Using windowing approach for large dataset');
+      // console.log('🪟 Using windowing approach for large dataset');
       return await this.analyzeWithWindows(simplified, originalMap);
 
     } catch (error) {
@@ -44,13 +44,13 @@ class PromptAnalyzer {
   // Analyze single window of containers
   async analyzeSingleWindow(containers, originalMap) {
     const session = await this.createPromptSession();
-    console.log('PromptAPI created session:', session);
+    // console.log('PromptAPI created session:', session);
     
     try {
       const prompt = this.createAnalysisPrompt(containers);
-      console.log('Prompt:', prompt);
+      // console.log('Prompt:', prompt);
       const result = await session.prompt(prompt);
-      console.log('PromptAPI result:', result);
+      // console.log('PromptAPI result:', result);
       
       return this.parseAnalysisResult(result, originalMap);
     } finally {
@@ -65,18 +65,18 @@ class PromptAnalyzer {
     const windows = this.preprocessor.createWindows(containers);
     
     for (let i = 0; i < windows.length; i++) {
-      console.log(`🔍 Analyzing window ${i + 1}/${windows.length}`);
+      // console.log(`🔍 Analyzing window ${i + 1}/${windows.length}`);
       
       const result = await this.analyzeSingleWindow(windows[i], originalMap);
       
       // If we found a high-confidence result, return it
       if (result && result.confidence >= this.confidenceThreshold) {
-        console.log(`✅ Found high-confidence result in window ${i + 1}`);
+        // console.log(`✅ Found high-confidence result in window ${i + 1}`);
         return result;
       }
     }
 
-    console.log('🔍 No high-confidence result found in any window');
+    // console.log('🔍 No high-confidence result found in any window');
     return null;
   }
 
@@ -109,25 +109,25 @@ async createPromptSession() {
   // 📥 ADD THIS NEW METHOD TO THE CLASS
   // Download data as JSON file
   downloadJSON(data, filename) {
-    try {
-      const jsonString = JSON.stringify(data, null, 2);
-      const blob = new Blob([jsonString], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      a.style.display = 'none';
-      
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      
-      URL.revokeObjectURL(url);
-      console.log(`📥 Downloaded: ${filename}`);
-    } catch (error) {
-      console.error(`Failed to download ${filename}:`, error);
-    }
+    // try {
+    //   const jsonString = JSON.stringify(data, null, 2);
+    //   const blob = new Blob([jsonString], { type: 'application/json' });
+    //   const url = URL.createObjectURL(blob);
+    //   
+    //   const a = document.createElement('a');
+    //   a.href = url;
+    //   a.download = filename;
+    //   a.style.display = 'none';
+    //   
+    //   document.body.appendChild(a);
+    //   a.click();
+    //   document.body.removeChild(a);
+    //   
+    //   URL.revokeObjectURL(url);
+    //   console.log(`📥 Downloaded: ${filename}`);
+    // } catch (error) {
+    //   console.error(`Failed to download ${filename}:`, error);
+    // }
   }
 
   createAnalysisPrompt(containers) {
@@ -190,16 +190,16 @@ async createPromptSession() {
   // Check if PromptAPI (Gemini Nano) is available
   async isPromptAPIAvailable() {
     if (!LanguageModel.availability()) {
-      console.log('PromptAPI not available');
+      // console.log('PromptAPI not available');
       return false;
     }
     
     try {
       const availability = await LanguageModel.availability({ language: 'en' });
-      console.log('PromptAPI availability:', availability);
+      // console.log('PromptAPI availability:', availability);
       return availability === 'available';
     } catch (error) {
-      console.log('PromptAPI availability check failed:', error);
+      // console.log('PromptAPI availability check failed:', error);
       return false;
     }
   }

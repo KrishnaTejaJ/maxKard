@@ -7,7 +7,7 @@ class PromptPreprocessor {
 
   // Main preprocessing function
   preprocessContainers(containers) {
-    console.log(`🔄 Preprocessing ${containers.length} containers for PromptAPI...`);
+    // console.log(`🔄 Preprocessing ${containers.length} containers for PromptAPI...`);
     
     // Create simplified containers with truncated text
     const simplified = containers.map((container, index) => ({
@@ -21,7 +21,7 @@ class PromptPreprocessor {
     // Sort by text length (shortest first)
     const sorted = this.sortByTextLength(deduped);
     
-    console.log(`📊 Preprocessed: ${containers.length} → ${sorted.length} unique containers`);
+    // console.log(`📊 Preprocessed: ${containers.length} → ${sorted.length} unique containers`);
     
     return {
       simplified: sorted,
@@ -54,7 +54,7 @@ class PromptPreprocessor {
       windows.push(currentWindow);
     }
     
-    console.log(`🪟 Created ${windows.length} windows for PromptAPI processing`);
+    // console.log(`🪟 Created ${windows.length} windows for PromptAPI processing`);
     return windows;
   }
 

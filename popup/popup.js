@@ -59,8 +59,19 @@ function renderHome() {
         <div class="no-rec-icon">🛒</div>
         <div class="no-rec-title">No recommendation yet</div>
         <div class="no-rec-text">Visit a checkout page to see your best card recommendation!</div>
+        <button class="refresh-button" id="refreshBtn">
+          <span class="refresh-icon">↻</span>
+          Refresh
+        </button>
       </div>
     `;
+
+    // Add event listener for refresh button
+    const refreshBtn = document.getElementById('refreshBtn');
+    if (refreshBtn) {
+      refreshBtn.addEventListener('click', handleRefresh);
+    }
+    
     return;
   }
   
@@ -93,6 +104,71 @@ function renderHome() {
       MaxKard automatically detects checkout pages and recommends your best card based on the merchant category.
     </div>
   `;
+}
+
+async function handleRefresh() {
+  const refreshBtn = document.getElementById('refreshBtn');
+  if (!refreshBtn) return;
+  
+  const refreshIcon = refreshBtn.querySelector('.refresh-icon');
+  
+  // Add loading state
+  refreshBtn.disabled = true;
+  refreshIcon.style.animation = 'spin 1s linear infinite';
+  refreshBtn.innerHTML = '<span class="refresh-icon">↻</span> Refreshing...';
+  
+  try {
+    // Get current tab
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    
+    if (!tab) {
+      throw new Error('No active tab found');
+    }
+    
+    // Send message to content script to recalculate
+    const response = await chrome.tabs.sendMessage(tab.id, { 
+      action: 'recalculate' 
+    });
+    
+    if (response && response.success) {
+      // Wait a moment for the recommendation to be saved
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Reload recommendation from storage
+      await loadCurrentRecommendation();
+      renderHome();
+      
+      // Show success feedback
+      refreshBtn.innerHTML = '<span class="refresh-icon">✓</span> Updated!';
+      refreshBtn.style.background = 'var(--success)';
+      
+      // Reset button after 2 seconds
+      setTimeout(() => {
+        refreshBtn.disabled = false;
+        refreshIcon.style.animation = '';
+        refreshBtn.innerHTML = '<span class="refresh-icon">↻</span> Refresh';
+        refreshBtn.style.background = '';
+      }, 2000);
+      
+    } else {
+      throw new Error(response?.error || 'Refresh failed');
+    }
+    
+  } catch (error) {
+    console.error('Error refreshing recommendations:', error);
+    
+    // Show error state
+    refreshBtn.innerHTML = '<span class="refresh-icon">⚠</span> Try Again';
+    refreshBtn.style.background = '#dc2626';
+    
+    // Reset button state after 3 seconds
+    setTimeout(() => {
+      refreshBtn.disabled = false;
+      refreshIcon.style.animation = '';
+      refreshBtn.innerHTML = '<span class="refresh-icon">↻</span> Refresh';
+      refreshBtn.style.background = '';
+    }, 3000);
+  }
 }
 
 function renderCards() {
