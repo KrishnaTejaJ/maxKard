@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MaxKard</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="header">
+    <div class="header-top">
+      <div class="logo">
+        <div class="logo-text">MaxKard</div>
+      </div>
+      <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+        <span id="themeIcon">🌙</span>
+      </button>
+    </div>
+    <div class="tagline">Smart rewards, every purchase</div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="home">Home</button>
+    <button class="tab" data-tab="cards">Cards</button>
+    <button class="tab" data-tab="settings">Settings</button>
+  </div>
+
+  <!-- Home Tab -->
+  <div class="tab-content active" id="home">
+    <div id="homeContent"></div>
+  </div>
+
+  <!-- Cards Tab -->
+  <div class="tab-content" id="cards">
+    <div class="section-header">
+      <div class="section-title">Your Cards</div>
+      <div class="card-count" id="cardCount">0 cards</div>
+    </div>
+
+    <div class="cards-list" id="cardsList"></div>
+
+    <button class="btn-primary" id="addCardBtn">Add Card</button>
+  </div>
+
+  <!-- Settings Tab -->
+  <div class="tab-content" id="settings">
+    <div class="settings-section">
+      <div class="settings-label">Appearance</div>
+      <div class="setting-item">
+        <div class="setting-info">
+          <div class="setting-name">Dark Mode</div>
+          <div class="setting-description">Automatically matches your system preferences</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="darkModeToggle">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-label">Notifications</div>
+      <div class="setting-item">
+        <div class="setting-info">
+          <div class="setting-name">Smart Alerts</div>
+          <div class="setting-description">Get notified when a better card is available for your purchase</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="alertsToggle" checked>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-label">Privacy</div>
+      <div class="setting-item">
+        <div class="setting-info">
+          <div class="setting-name">Auto-Detect Merchants</div>
+          <div class="setting-description">Automatically identify merchants and categories while browsing</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="autoDetectToggle" checked>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="settings-footer">
+      <div class="settings-footer-text">
+        Your card data is stored locally on your device and is never shared. <a href="#" class="link">Learn more</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add/Edit Card Modal -->
+  <div class="modal" id="cardModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title" id="modalTitle">Add New Card</h2>
+        <button class="close-btn" id="closeModalBtn">&times;</button>
+      </div>
+
+      <div class="ai-helper">
+        <div class="ai-helper-title">AI Helper (Optional)</div>
+        <textarea id="aiParseInput" placeholder="Paste your card's rewards terms here and we'll parse it for you"></textarea>
+        <button class="btn-parse" id="parseBtn">Parse with AI</button>
+      </div>
+
+      <form id="cardForm">
+        <div class="form-group">
+          <label class="form-label" for="cardName">Card Name *</label>
+          <input type="text" id="cardName" class="form-input" placeholder="e.g., Chase Sapphire Preferred" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="cardNetwork">Card Network *</label>
+          <select id="cardNetwork" class="form-input" required>
+            <option value="visa">Visa</option>
+            <option value="mastercard">Mastercard</option>
+            <option value="amex">American Express</option>
+            <option value="discover">Discover</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="lastFour">Last 4 Digits (Optional)</label>
+          <input type="text" id="lastFour" class="form-input" placeholder="1234" maxlength="4">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Rewards Structure *</label>
+          <div class="rewards-grid">
+            <div class="reward-input-group">
+              <label>Dining %</label>
+              <input type="number" id="rewardDining" step="0.1" min="0" placeholder="3.0">
+            </div>
+            <div class="reward-input-group">
+              <label>Gas %</label>
+              <input type="number" id="rewardGas" step="0.1" min="0" placeholder="2.0">
+            </div>
+            <div class="reward-input-group">
+              <label>Groceries %</label>
+              <input type="number" id="rewardGroceries" step="0.1" min="0" placeholder="2.0">
+            </div>
+            <div class="reward-input-group">
+              <label>Travel %</label>
+              <input type="number" id="rewardTravel" step="0.1" min="0" placeholder="2.0">
+            </div>
+            <div class="reward-input-group">
+              <label>Online %</label>
+              <input type="number" id="rewardOnline" step="0.1" min="0" placeholder="1.0">
+            </div>
+            <div class="reward-input-group">
+              <label>Everything Else %</label>
+              <input type="number" id="rewardDefault" step="0.1" min="0" placeholder="1.0" required>
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-save">Save Card</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
