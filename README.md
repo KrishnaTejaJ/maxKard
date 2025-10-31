@@ -78,7 +78,7 @@ MaxKard is designed for online shoppers who want to make informed purchasing dec
 
 1. **Download the Extension**
    ```bash
-   git clone https://github.com/yourusername/maxKard.git
+   git clone https://github.com/KrishnaTejaJ/maxKard.git
    cd maxKard
    ```
 
@@ -140,7 +140,7 @@ For testing issues, please create an issue in this GitHub repository with:
 ### For Judges/Developers
 ```bash
 # Clone repository
-git clone https://github.com/yourusername/maxKard.git
+git clone https://github.com/KrishnaTejaJ/maxKard.git
 cd maxKard
 
 # No build process required - pure vanilla JS
