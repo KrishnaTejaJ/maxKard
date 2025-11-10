@@ -1,5 +1,12 @@
 # MaxKard Chrome Extension Submission
 
+![Chrome AI Challenge 2025](https://img.shields.io/badge/Chrome%20AI%20Challenge-2025-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white)
+![Built with Chrome AI](https://img.shields.io/badge/Built%20with-Chrome%20Built--in%20AI-34A853?style=for-the-badge&logo=google&logoColor=white)
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)
+![Manifest V3](https://img.shields.io/badge/Manifest-V3-blue?style=for-the-badge&logo=googlechrome)
+![Privacy First](https://img.shields.io/badge/Privacy-First-green?style=for-the-badge&logo=shield&logoColor=white)
+![Status](https://img.shields.io/badge/Status-Active-success?style=for-the-badge)
+
 ## Application Description
 
 MaxKard is an innovative Chrome extension designed to enhance online shopping experiences by providing intelligent checkout assistance and transaction analysis. The extension seamlessly integrates with e-commerce websites to offer users smart recommendations and streamlined purchasing processes.
